@@ -1,0 +1,15 @@
+{
+  "name": "css-smoothstep",
+  "version": "1.0.0",
+  "description": "A demonstration of a CSS function that smoothly transitions between two props",
+  "scripts": {
+    "start": "live-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Mauro Constantinescu <mauro.constantinescu@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "live-server": "^1.2.1"
+  }
+}

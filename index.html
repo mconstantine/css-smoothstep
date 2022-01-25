@@ -1,0 +1,97 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS Smoothstep</title>
+  <link rel="stylesheet" href="./styles/index.css">
+  <script src="./scripts/index.js"></script>
+</head>
+<body>
+  <section class="page">
+    <h1>CSS Smoothstep</h1>
+    <p>
+      Lots of people handle responsiveness in CSS with media queries. I say it's ok to use them for big changes in how the layout appears at high level, but some things should be smooth. Sure, we have <code>vw</code> and <code>vh</code> units, but they are not very easy to control. Also, have you ever heard a designer say "let's make the font size one seventeenth of the viewport big"? I didn't think so. They send you a layout on an iPhone and one on a cinema screen, and leave the rest to you.
+    </p>
+    <p>
+      GLSL (that's the language used for writing shaders for GPUs) brings us a very useful function, called <code>smoothstep</code>, that behaves like this: you set a start and end point, and it will linearly interpolate between them. We can use the same concept in CSS to handle dimensions in a truly responsive way.
+    </p>
+    <p>
+      Here's the magic formula:
+    </p>
+    <pre><code>
+  property: calc(min_d{px} + (100vw - min_b{px}) / (max_b - min_b) * (max_d - min_d));
+    </code></pre>
+    <p>
+      Where <code>min_d</code> and <code>max_d</code> are the minimum and maximum values for the dimension: let's say you want a font size to go from 21px to 64px, here are your <code>min_d</code> and <code>max_d</code>. <code>min_b</code> and <code>max_b</code> are the minimum and maximum values for the breakpoints: you will have <code>min_d</code> pixels at <code>min_b</code> viewport width, and <code>max_d</code> pixels at <code>max_b</code> viewport width. The <code>{px}</code> notation indicates where you should explicitly set the measuring units, otherwise the property won't be valid. <code>100vw</code> is, of course, the viewport width.
+    </p>
+    <p>
+      The formula is actually a proportion operation, and it's not complicated at all. Let's build it from the ground up. Let's start by saying we want a font size that goes from zero to 64px when the viewport goes from zero to 1280px. Here's the proportion:
+    </p>
+    <pre><code>
+  font-size : 64 = current_viewport_width : 1280
+  font-size = current_viewport_width / 1280 * 64
+    </code></pre>
+    <p>
+      <code>current_viewport_width</code> is always <code>100vw</code>, so:
+    </p>
+    <pre><code>
+  font-size: calc(100vw / 1280 * 64);
+    </code></pre>
+    <p>
+      Now, we don't want the font size to start from zero, do we? We want it to start from a healthy value, let's say 21px when the viewport is 320px (old iPhones size). We just add the initial 21px to the formula:
+    </p>
+    <pre><code>
+  font-size: calc(21px + 100vw / 1280 * 64);
+    </code></pre>
+    <p>
+      Now it goes from 37px to 85px. What? Well, 85 is just 21 + 64, we are just blindly adding 21 to everything. Let's fix this by removing the initial font size from the final one:
+    </p>
+    <pre><code>
+  font-size: calc(21px + 100vw / 1280 * (64 - 21));
+    </code></pre>
+    <p>
+      We are now interpolating the amount we need to get from 21 to 64, not the whole 64px. The final value looks good now, we are back to 64px at 1280px. We still have a weird 31.75px font size at 320px. This time it's not a problem with the font size, but with the viewport: looks like we need to do the same "add the difference" trick to the viewport as well! Let's subtract the initial breakpoint (320px) from the current and maximum breakpoints:
+    </p>
+    <pre><code>
+  font-size: calc(21px + (100vw - 320px) / (1280 - 320) * (64 - 21));
+    </code></pre>
+    <p>
+      Now we are talking! The only remaining issue is that, when the viewport goes over 1280px, the font size keeps growing, and the same happens when the viewport goes under 320px (it keeps shrinking). We can easily fix both with media queries. I usually just fix the upper bound, as the minimum breakpoint is usually too small to even bother.
+    </p>
+    <p>
+      Let's turn the formula to a generic one, once again, and throw in the media query as well:
+    </p>
+    <pre><code>
+  property: calc(min_d{px} + (100vw - min_b{px}) / (max_b - min_b) * (max_d - min_d));
+
+  @media all and (min-width: max_b{px}) {
+    property: max_d{px};
+  }
+    </code></pre>
+    <p>
+      Here is a practical example and a graph that shows you which value is returned in real time. This entire page uses smoothstep for both font size and vertical spacing though, so feel free to resize it and see what's what.
+    </p>
+    <h2 id="target">I'm smoothstepping</h2>
+    <p id="current-size"></p>
+    <canvas id="path-drawer"></canvas>
+    <pre>
+      <code>
+  h2 {
+    font-size: calc(21px + (100vw - 320px) / (1280 - 320) * (64 - 21));
+  }
+
+  @media all and (min-width: 1280px) {
+    h2 {
+      font-size: 64px;
+    }
+  }
+      </code>
+    </pre>
+    <p>
+      Here's a video of how it works, in case you're on mobile or too lazy to resize the window (I won't judge you):
+    </p>
+    <video src="./assets/example.mp4" controls muted></video>
+  </section>
+</body>
+</html>
